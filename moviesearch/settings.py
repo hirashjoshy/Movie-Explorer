@@ -130,3 +130,5 @@ CACHES = {
         "LOCATION": "unique-cache"
     }
 }
+
+OMDB_API_KEY = "30579ddf"

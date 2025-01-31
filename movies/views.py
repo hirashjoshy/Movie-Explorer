@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from django.shortcuts import redirect
 from django.core.cache import cache
 from django.conf import settings
+from django.contrib import messages
 import requests 
 
 # Create your views here.
@@ -61,3 +63,49 @@ def movie_details(request, imdb_id):
             cache.set(cache_key, movie, timeout=86400) 
 
     return render(request, "movies/details.html", {"movie": movie})
+
+def add_to_favorites(request, imdb_id):
+    if 'favorites' not in request.session:
+        request.session['favorites'] = []
+
+    if imdb_id not in request.session['favorites']:
+        request.session['favorites'].append(imdb_id)
+        request.session.modified = True
+        messages.success(request, "Movie added to your favorites!")
+
+    return redirect('movie_details', imdb_id=imdb_id)
+
+def remove_from_favorites(request, imdb_id):
+    # Get the current list of favorites from the session
+    favorites = request.session.get('favorites', [])
+
+    # Remove the movie from the favorites list if it exists
+    if imdb_id in favorites:
+        favorites.remove(imdb_id)
+
+    # Save the updated favorites list back to the session
+    request.session['favorites'] = favorites
+    request.session.modified = True
+
+    # Redirect back to the favorites page
+    return redirect('favorites')
+
+def favorites_list(request):
+    # Get the list of favorite movie IDs from the session
+    favorite_ids = request.session.get('favorites', [])
+    favorite_movies = []
+
+    # Fetch details for each favorite movie using the API
+    for imdb_id in favorite_ids:
+        cache_key = f"movie_{imdb_id}"
+        movie = cache.get(cache_key)
+
+        if not movie:  # If not in cache, fetch from API
+            response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "i": imdb_id})
+            movie = response.json()
+            if movie.get("Response") == "True":
+                cache.set(cache_key, movie, timeout=86400)  # Cache for 1 day
+        if movie:
+            favorite_movies.append(movie)
+
+    return render(request, "movies/favorites.html", {"movies": favorite_movies})

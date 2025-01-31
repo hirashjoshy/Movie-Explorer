@@ -11,6 +11,14 @@
         <p><strong>Plot:</strong> {{ movie.Plot }}</p>
         <p><strong>Director:</strong> {{ movie.Director }}</p>
         <p><strong>Cast:</strong> {{ movie.Actors }}</p>
+
+        <!-- Favorites Button -->
+        <form method="POST" action="{% url 'add_to_favorites' movie.imdbID %}">
+            {% csrf_token %}
+            <button type="submit" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Add to Favorites
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}
