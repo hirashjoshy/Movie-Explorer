@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.conf import settings
 from django.contrib import messages
 import requests 
+from math import ceil
 
 # Create your views here.
 
@@ -19,37 +20,83 @@ def home(request):
 
     movies_data = []
 
-    for title in trending_movies:
-        cache_key = f"movie_{title}"  # Creating a cache key for each Movie
-        movie_data = cache.get(cache_key)
+    # for title in trending_movies:
+    #     cache_key = f"movie_{title}"  # Creating a cache key for each Movie
+    #     movie_data = cache.get(cache_key)
 
-        if not movie_data:  # Fetch from API only if cache key is not present
-            response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "t": title})
-            data = response.json()
+    #     if not movie_data:  # Fetch from API only if cache key is not present
+    #         response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "t": title})
+    #         data = response.json()
 
-            if response.status_code == 200 and data.get("Response") == "True":
-                movie_data = data
-                cache.set(cache_key, movie_data, timeout=3600)  # Cache for 1 hour
+    #         if response.status_code == 200 and data.get("Response") == "True":
+    #             movie_data = data
+    #             cache.set(cache_key, movie_data, timeout=3600)  # Cache for 1 hour
 
-        if movie_data:
-            movies_data.append(movie_data)
+    #     if movie_data:
+    #         movies_data.append(movie_data)
 
     return render(request, "movies/home.html", {"movies": movies_data})
 
+import logging 
+
+logger = logging.getLogger(__name__)
+
 def search(request):
     query = request.GET.get("q", "").strip()
-    cache_key = f"search_{query}"  
-    movies = cache.get(cache_key)
+    page = int(request.GET.get("page", 1))  
+    results_per_page = 10
+    total_pages = 0  
 
-    if query and not movies:  
-        response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "s": query})
+    # Create a cache key based on the query and page number
+    cache_key = f"search_{query}_page_{page}"
+
+    # Try to get the results from the cache
+    cached_movies = cache.get(cache_key)
+    
+    if cached_movies is not None:
+        # If cached data exists, use it
+        logger.debug(f"Using cached results for query '{query}' and page {page}")
+        movies = cached_movies
+        total_pages = int(request.GET.get("total_pages", 0))  
+    else:
+        # If no cache hit, fetch from the OMDB API
+        logger.debug(f"Making API call for page {page} with query '{query}'")
+        response = requests.get("https://www.omdbapi.com/", params={
+            "apikey": settings.OMDB_API_KEY, 
+            "s": query, 
+            "page": page
+        })
         data = response.json()
 
         if data.get("Response") == "True":
+            total_results = int(data.get("totalResults", 0))
             movies = data.get("Search", [])
+
+            # Calculate the total number of pages
+            total_pages = ceil(total_results / results_per_page)
+
+            # Cache the results for the current page and query
             cache.set(cache_key, movies, timeout=1800)  # Cache for 30 minutes
 
-    return render(request, "movies/search.html", {"movies": movies or [], "query": query})
+            logger.debug(f"API returned {len(movies)} movies for page {page}")
+            logger.debug(f"Total pages: {total_pages}")
+        else:
+            logger.error(f"Error fetching data from OMDB: {data.get('Error', 'Unknown error')}")
+            movies = []  
+
+    
+    previous_page = max(1, page - 1)  
+    next_page = min(total_pages, page + 1)  
+
+    return render(request, "movies/search.html", {
+        "movies": movies,
+        "query": query,
+        "page": page,
+        "total_pages": total_pages,
+        "previous_page": previous_page,
+        "next_page": next_page,
+    })
+
 
 def movie_details(request, imdb_id):
     cache_key = f"movie_{imdb_id}"  

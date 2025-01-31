@@ -3,7 +3,7 @@
 {% block content %}
 
 {% if movies %}
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<div class="grid grid-cols-5 gap-4">
     {% for movie in movies %}
     <div class="bg-gray-800 p-4 rounded-lg">
         <img src="{{ movie.Poster }}" alt="{{ movie.Title }}" class="w-full h-64 object-cover">
@@ -13,7 +13,26 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- Pagination Controls -->
+<div class="flex justify-between mt-6">
+    <!-- Previous Page Link -->
+    {% if page > 1 %}
+        <a href="?q={{ query }}&page={{ previous_page }}" class="text-blue-500">Previous</a>
+    {% else %}
+        <span class="text-gray-500">Previous</span>
+    {% endif %}
+
+    <!-- Next Page Link -->
+    {% if page < total_pages %}
+        <a href="?q={{ query }}&page={{ next_page }}" class="text-blue-500">Next</a>
+    {% else %}
+        <span class="text-gray-500">Next</span>
+    {% endif %}
+</div>
+
 {% else %}
 <p>No results found.</p>
 {% endif %}
+
 {% endblock %}
