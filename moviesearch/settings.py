@@ -131,6 +131,6 @@ CACHES = {
     }
 }
 
-OMDB_API_KEY = "30579ddf"
+
 
 

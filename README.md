@@ -32,18 +32,23 @@ MovieSearch is a Django-based web application that allows users to explore movie
    pip install -r requirements.txt
    ```
 
-4. Add your OMDB API key to `settings.py`:
+4. Apply migrations to set up the database:
+   ```bash
+   python manage.py migrate
+   ``` 
+
+5. Add your OMDB API key to `settings.py`:
    Inside `moviesearch/settings.py`, add the following line:
    ```python
    OMDB_API_KEY = "your_api_key"
    ```
 
-5. Run the development server:
+6. Run the development server:
    ```bash
    python manage.py runserver
    ```
 
-6. Open the app in your browser:
+7. Open the app in your browser:
    Visit `http://127.0.0.1:8000/`.
 
 

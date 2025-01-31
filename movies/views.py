@@ -20,20 +20,20 @@ def home(request):
 
     movies_data = []
 
-    # for title in trending_movies:
-    #     cache_key = f"movie_{title}"  # Creating a cache key for each Movie
-    #     movie_data = cache.get(cache_key)
+    for title in trending_movies:
+        cache_key = f"movie_{title}"  # Creating a cache key for each Movie
+        movie_data = cache.get(cache_key)
 
-    #     if not movie_data:  # Fetch from API only if cache key is not present
-    #         response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "t": title})
-    #         data = response.json()
+        if not movie_data:  # Fetch from API only if cache key is not present
+            response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "t": title})
+            data = response.json()
 
-    #         if response.status_code == 200 and data.get("Response") == "True":
-    #             movie_data = data
-    #             cache.set(cache_key, movie_data, timeout=3600)  # Cache for 1 hour
+            if response.status_code == 200 and data.get("Response") == "True":
+                movie_data = data
+                cache.set(cache_key, movie_data, timeout=3600)  # Cache for 1 hour
 
-    #     if movie_data:
-    #         movies_data.append(movie_data)
+        if movie_data:
+            movies_data.append(movie_data)
 
     return render(request, "movies/home.html", {"movies": movies_data})
 
@@ -54,12 +54,10 @@ def search(request):
     cached_movies = cache.get(cache_key)
     
     if cached_movies is not None:
-        # If cached data exists, use it
         logger.debug(f"Using cached results for query '{query}' and page {page}")
         movies = cached_movies
         total_pages = int(request.GET.get("total_pages", 0))  
     else:
-        # If no cache hit, fetch from the OMDB API
         logger.debug(f"Making API call for page {page} with query '{query}'")
         response = requests.get("https://www.omdbapi.com/", params={
             "apikey": settings.OMDB_API_KEY, 
@@ -72,11 +70,9 @@ def search(request):
             total_results = int(data.get("totalResults", 0))
             movies = data.get("Search", [])
 
-            # Calculate the total number of pages
             total_pages = ceil(total_results / results_per_page)
 
-            # Cache the results for the current page and query
-            cache.set(cache_key, movies, timeout=1800)  # Cache for 30 minutes
+            cache.set(cache_key, movies, timeout=1800) 
 
             logger.debug(f"API returned {len(movies)} movies for page {page}")
             logger.debug(f"Total pages: {total_pages}")
@@ -123,35 +119,29 @@ def add_to_favorites(request, imdb_id):
     return redirect('movie_details', imdb_id=imdb_id)
 
 def remove_from_favorites(request, imdb_id):
-    # Get the current list of favorites from the session
     favorites = request.session.get('favorites', [])
 
-    # Remove the movie from the favorites list if it exists
     if imdb_id in favorites:
         favorites.remove(imdb_id)
 
-    # Save the updated favorites list back to the session
     request.session['favorites'] = favorites
     request.session.modified = True
 
-    # Redirect back to the favorites page
     return redirect('favorites')
 
 def favorites_list(request):
-    # Get the list of favorite movie IDs from the session
     favorite_ids = request.session.get('favorites', [])
     favorite_movies = []
 
-    # Fetch details for each favorite movie using the API
     for imdb_id in favorite_ids:
         cache_key = f"movie_{imdb_id}"
         movie = cache.get(cache_key)
 
-        if not movie:  # If not in cache, fetch from API
+        if not movie:  
             response = requests.get("https://www.omdbapi.com/", params={"apikey": settings.OMDB_API_KEY, "i": imdb_id})
             movie = response.json()
             if movie.get("Response") == "True":
-                cache.set(cache_key, movie, timeout=86400)  # Cache for 1 day
+                cache.set(cache_key, movie, timeout=86400)  
         if movie:
             favorite_movies.append(movie)
 
