@@ -1,11 +1,13 @@
 # MovieSearch
 
-MovieSearch is a Django-based web application that allows users to explore movies through a trending page, a search functionality, and detailed movie information pages.
+MovieSearch is a Django-based web application that allows users to explore movies through a trending page, a search functionality, detailed movie information pages, and the ability to save their favorite movies.
 
 ## Features
 - **Trending Page**: Displays the most popular movies currently trending.
 - **Search Page**: Allows users to search for movies by title.
 - **Details Page**: Provides detailed information about a selected movie, including cast, plot, and ratings.
+- **Pagination**: Search results are paginated to improve user experience by displaying a limited number of results per page. Users can navigate through pages to view additional movies.
+- **Favorites**: Users can add movies to their favorites. Favorite movies are stored for each user, allowing them to easily view and manage their collection of favorite films.
 
 ## Setup Instructions
 
